@@ -1,5 +1,6 @@
-import { ArrowLeft, TextIcon, Upload } from 'lucide-react';
+import { ArrowLeft, Sparkle, TextIcon, Upload } from 'lucide-react';
 import React, { useEffect, useState } from 'react'
+import toast from 'react-hot-toast';
 
 const StoryModel = ({setShowModal,fetchStories}) => {
   const bgColors = [
@@ -12,6 +13,7 @@ const StoryModel = ({setShowModal,fetchStories}) => {
   const [background,setBackground]=useState(bgColors[0]);
   const [text,setText]=useState("");
   const [media,setMedia]=useState(null);
+
   const [previewUrl,setPreviewUrl]=useState(null);
 
   const handleMediaUpload=(e)=>{
@@ -75,6 +77,13 @@ const StoryModel = ({setShowModal,fetchStories}) => {
           </label>
 
         </div>
+        <button onClick={()=>toast.promise(handleCreateStory(),{loading:'saving...',
+          success:<p>Story Added</p>,
+          error:e=><p>{e.message}</p>
+          
+        })} className='flex items-center justify-center gap-2 text-white py-3 mt-4 w-full rounded bg-gradient-to-r from-indigo-500 mask-b-to-purple-600 hover:from-indigo-600 hover:to-purple-700 active:scale-95 transition cursor-pointer;'>
+          <Sparkle size={18}/> Create Story
+        </button>
         
       </div>
     </div>

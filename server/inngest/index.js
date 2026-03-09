@@ -30,7 +30,7 @@ const syncUserCreation=inngest.createFunction(
 
   }
 )
-//update user data
+//ingest function to update the user data to a database
 const syncUserUpdation=inngest.createFunction(
   {id:'update-user-from-clerk'},
   {event:'clerk/user.updated'},

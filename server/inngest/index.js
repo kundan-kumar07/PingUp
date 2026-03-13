@@ -277,5 +277,5 @@ export const functions = [
   syncUserUpdation,
   syncUserDeletion,
   sendNewConnectionRequestReminder,
-  sendNotificationofUnseenMessages
+  sendNotificationofUnseenMessages,deleteStory
 ];

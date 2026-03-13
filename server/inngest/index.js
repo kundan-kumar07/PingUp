@@ -3,6 +3,7 @@ import User from "../models/user.js";
 import Connection from "../models/connection.js";
 import sendEmail from "../configs/nodeMailer.js";
 import Story from "../models/Story.js";
+import Message from "../models/Message.js";
 
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "ping-Up app" });
@@ -64,15 +65,13 @@ const sendNewConnectionRequestReminder = inngest.createFunction(
   { id: "send-new-connection-reminder" },
   { event: "app/connection-request" },
   async ({ event, step }) => {
-
     const { connectionId } = event.data;
 
     // Send first email
     await step.run("send-connection-request-mail", async () => {
-
-      const connection = await Connection
-        .findById(connectionId)
-        .populate("from_user_id to_user_id");
+      const connection = await Connection.findById(connectionId).populate(
+        "from_user_id to_user_id",
+      );
 
       if (!connection) {
         return { message: "Connection not found" };
@@ -125,9 +124,8 @@ const sendNewConnectionRequestReminder = inngest.createFunction(
       await sendEmail({
         to: connection.to_user_id.email,
         subject,
-        body
+        body,
       });
-
     });
 
     // Wait 24 hours
@@ -136,10 +134,9 @@ const sendNewConnectionRequestReminder = inngest.createFunction(
 
     // Send reminder email if still pending
     await step.run("send-connection-request-reminder", async () => {
-
-      const connection = await Connection
-        .findById(connectionId)
-        .populate("from_user_id to_user_id");
+      const connection = await Connection.findById(connectionId).populate(
+        "from_user_id to_user_id",
+      );
 
       if (!connection) {
         return { message: "Connection not found" };
@@ -186,32 +183,99 @@ const sendNewConnectionRequestReminder = inngest.createFunction(
       await sendEmail({
         to: connection.to_user_id.email,
         subject,
-        body
+        body,
       });
-      return {message:"reminder sent"}
-
+      return { message: "reminder sent" };
     });
-
-  }
+  },
 );
 
 //inngest function to delete the story after 24 hours
 
-const deleteStory=inngest.createFunction(
-  {id:'story-delete'},
-  {event:'app/story.delete'},
-  async({event,step})=>{
-    const {storyId}=event.data;
-    const in24hours=new Date(Date.now()+24*60*60*1000);
-    await step.sleepUntil('wait-for-24-hours',in24hours);
-    await step.run("delete-story",async()=>{
+const deleteStory = inngest.createFunction(
+  { id: "story-delete" },
+  { event: "app/story.delete" },
+  async ({ event, step }) => {
+    const { storyId } = event.data;
+    const in24hours = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await step.sleepUntil("wait-for-24-hours", in24hours);
+    await step.run("delete-story", async () => {
       await Story.findByIdAndDelete(storyId);
-      return {message:"story deleted"}
-    })
+      return { message: "story deleted" };
+    });
+  },
+);
 
-  }
-)
+const sendNotificationofUnseenMessages = inngest.createFunction(
+  { id: "send-unseen-messages-notification" },
+  { cron: "TZ=America/New_York 0 9 * * *" },
+  async ({ step }) => {
+    const messages = await Message.find({
+      seen: false,
+    }).populate("to_user_id");
+    const unseenCount = {};
+    messages.map((message) => {
+      unseenCount[message.to_user_id._id] =
+        (unseenCount[message.to_user_id._id] || 0) + 1;
+    });
 
+    for (const userId in unseenCount) {
+      const user = await User.findById(userId);
+      const subject = `💬 You have ${unseenCount[userId]} unseen messages`;
+      const body = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Unseen Messages</title>
+</head>
+<body style="font-family: Arial, sans-serif; background:#f4f6f8; padding:20px;">
+  <div style="max-width:600px; margin:auto; background:#ffffff; border-radius:8px; padding:30px; box-shadow:0 4px 10px rgba(0,0,0,0.05);">
+
+    <h2 style="color:#333;">Hello ${user.full_name || user.username},</h2>
+
+    <p style="font-size:16px; color:#555;">
+      You have <strong>${unseenCount[userId]}</strong> unread message${unseenCount[userId] > 1 ? "s" : ""} waiting for you on <b>PingUp</b>.
+    </p>
+
+    <div style="text-align:center; margin:30px 0;">
+      <a href="https://your-app-link.com/messages"
+         style="background:#4f46e5; color:white; padding:12px 24px; text-decoration:none; border-radius:6px; font-size:16px;">
+         View Messages
+      </a>
+    </div>
+
+    <p style="font-size:14px; color:#888;">
+      Stay connected and never miss an important conversation.
+    </p>
+
+    <hr style="margin:30px 0; border:none; border-top:1px solid #eee;" />
+
+    <p style="font-size:12px; color:#999;">
+      This email was sent because you have unread messages on PingUp.
+      If you already checked them, you can ignore this email.
+    </p>
+
+  </div>
+</body>
+</html>
+`;
+
+      await sendEmail({
+        to: user.email,
+        subject,
+        body,
+      });
+    }
+    return {message:"Notification sent."}
+  },
+);
 
 // Create an empty array where we'll export future Inngest functions
-export const functions = [syncUserCreation, syncUserUpdation, syncUserDeletion,sendNewConnectionRequestReminder];
+export const functions = [
+  syncUserCreation,
+  syncUserUpdation,
+  syncUserDeletion,
+  sendNewConnectionRequestReminder,
+  sendNotificationofUnseenMessages
+];

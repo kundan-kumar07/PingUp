@@ -29,7 +29,7 @@ export const getUserData=async (req,res)=>{
 
 export const updateUserData=async (req,res)=>{
   try {
-    const {userId}=await req.auth();
+    const {userId}=req.auth();
     let {username,bio,location,full_name}=req.body;
     const tempUser=await User.findById(userId);
 
@@ -131,7 +131,7 @@ export const discoverUsers=async (req,res)=>{
 //follow user
 export const followUser=async (req,res)=>{
   try {
-    const {userId}=await req.auth();
+    const {userId}= req.auth();
     const {id}=req.body;
     const user=await User.findById(userId);
     if(user.following.includes(id)){
@@ -267,7 +267,8 @@ export const getConnectionRequest = async (req,res)=>{
   try {
 
     const {userId} = req.auth();
-    const user=await User.findById(userId).populate('connections followers following');
+   const user=await User.findById(userId)
+  .populate('connections followers following');
 
     const connections=user.connections
     const followers=user.followers;

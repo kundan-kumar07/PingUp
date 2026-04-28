@@ -140,13 +140,18 @@ git clone https://github.com/kundan-kumar07/pingup.git
 
 ### 2. Install dependencies
 
-Frontend
+
+### Frontend
+```
 cd client
 npm install
+```
 
-Backend
+### Backend
+```
 cd server
 npm install
+```
 
 ### 3. Run the project
 
@@ -161,14 +166,19 @@ npm run dev
 Server `.env`
 
 MONGODB_URI=
+
 CLERK_SECRET_KEY=
+
 IMAGEKIT_PUBLIC_KEY=
+
 IMAGEKIT_PRIVATE_KEY=
+
 IMAGEKIT_URL_ENDPOINT=
 
 Client `.env`
 
 VITE_CLERK_PUBLISHABLE_KEY=
+
 VITE_BASEURL=http://localhost:4000
 
 # 👨‍💻 Author
